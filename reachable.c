@@ -178,6 +178,9 @@ void mark_reachable_objects(struct rev_info *revs, int mark_reflog,
 	/* detached HEAD is not included in the list above */
 	head_ref(add_one_ref, revs);
 
+	/* worktrees are not included in either */
+	for_each_worktree_ref(add_one_ref, revs);
+
 	/* Add all reflog info */
 	if (mark_reflog)
 		add_reflogs_to_pending(revs, 0);
