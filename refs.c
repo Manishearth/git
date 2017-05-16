@@ -3,10 +3,12 @@
  */
 
 #include "cache.h"
+#include "commit.h"
 #include "lockfile.h"
 #include "refs.h"
 #include "refs/refs-internal.h"
 #include "object.h"
+#include "worktree.h"
 #include "tag.h"
 
 /*
@@ -1155,6 +1157,24 @@ int head_ref_submodule(const char *submodule, each_ref_fn fn, void *cb_data)
 int head_ref(each_ref_fn fn, void *cb_data)
 {
 	return head_ref_submodule(NULL, fn, cb_data);
+}
+
+int for_each_worktree_ref(each_ref_fn fn, void *cb_data)
+{
+	int i, flag, retval = 0;
+	struct object_id oid;
+	struct worktree **worktrees = get_worktrees(GWT_SORT_LINKED);
+	struct commit* commit;
+	for (i = 0; worktrees[i]; i++) {
+		if ((commit = lookup_commit_reference(worktrees[i]->head_sha1))) {
+			oid = commit->object.oid;
+			if (!read_ref_full("HEAD", RESOLVE_REF_READING, oid.hash, &flag)) {
+				if ((retval = fn("HEAD", &oid, flag, cb_data)))
+					return retval;
+			}
+		}
+	}
+	return retval;
 }
 
 /*
